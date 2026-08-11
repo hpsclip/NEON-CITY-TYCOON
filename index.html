@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon City Tycoon</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">◆</div>
+                <div>
+                    <h1>NEON CITY</h1>
+                    <span>TYCOON</span>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <small>CASH</small>
+                    <strong id="money">$500</strong>
+                </div>
+
+                <div class="stat">
+                    <small>PROFIT / SEC</small>
+                    <strong id="income">$0</strong>
+                </div>
+
+                <div class="stat">
+                    <small>REPUTATION</small>
+                    <strong id="reputation">1</strong>
+                </div>
+
+                <div class="stat">
+                    <small>DISTRICT</small>
+                    <strong id="district">1</strong>
+                </div>
+            </div>
+        </header>
+
+        <main>
+
+            <section class="hero">
+                <div>
+                    <p class="eyebrow">DISTRICT 01</p>
+                    <h2>Build something<br><span>worth remembering.</span></h2>
+                    <p class="description">
+                        Turn an abandoned storefront into the most successful district in the city.
+                    </p>
+                </div>
+
+                <div class="city-level">
+                    <div class="level-number" id="cityLevel">1</div>
+                    <div>
+                        <small>CITY LEVEL</small>
+                        <div class="progress">
+                            <div id="levelProgress"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard">
+
+                <div class="panel businesses-panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">YOUR CITY</p>
+                            <h3>Businesses</h3>
+                        </div>
+                        <span id="businessCount">0 / 4</span>
+                    </div>
+
+                    <div id="businesses"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">PROGRESSION</p>
+                            <h3>Upgrades</h3>
+                        </div>
+                    </div>
+
+                    <div id="upgrades"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">ACHIEVEMENTS</p>
+                            <h3>Milestones</h3>
+                        </div>
+                    </div>
+
+                    <div id="achievements"></div>
+                </div>
+
+            </section>
+
+        </main>
+
+        <div id="notificationContainer"></div>
+
+        <footer>
+            <button onclick="saveGame()">SAVE</button>
+            <button onclick="resetGame()">RESET</button>
+            <span>NEON CITY TYCOON • v0.1</span>
+        </footer>
+
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
