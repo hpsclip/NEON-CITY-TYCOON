@@ -1,119 +1,1359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon City Tycoon</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Neon City Tycoon</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow: hidden;
+    background: #05070b;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    display: block;
+}
+
+#ui {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    color: white;
+}
+
+#money {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+
+    padding: 12px 18px;
+
+    background: rgba(8,12,20,.85);
+    border: 1px solid rgba(90,240,255,.35);
+    border-radius: 10px;
+
+    font-size: 20px;
+    font-weight: bold;
+
+    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+}
+
+#money span {
+    color: #5ff3ff;
+}
+
+#title {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    font-size: 15px;
+    letter-spacing: 5px;
+    font-weight: bold;
+
+    color: white;
+}
+
+#instructions {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+
+    padding: 10px 14px;
+
+    background: rgba(8,12,20,.8);
+    border-radius: 8px;
+
+    color: #9ba7b8;
+    font-size: 12px;
+}
+
+#interaction {
+    position: absolute;
+    left: 50%;
+    bottom: 80px;
+    transform: translateX(-50%);
+
+    padding: 12px 22px;
+
+    background: rgba(8,12,20,.95);
+    border: 1px solid #5ff3ff;
+
+    border-radius: 8px;
+
+    color: white;
+    font-weight: bold;
+
+    display: none;
+}
+
+#notification {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 12px 20px;
+
+    background: rgba(8,12,20,.95);
+    border: 1px solid rgba(95,243,255,.4);
+
+    border-radius: 8px;
+
+    opacity: 0;
+    transition: .25s;
+}
+
+</style>
 </head>
 
 <body>
-    <div id="app">
 
-        <header class="topbar">
-            <div class="brand">
-                <div class="brand-icon">◆</div>
-                <div>
-                    <h1>NEON CITY</h1>
-                    <span>TYCOON</span>
-                </div>
-            </div>
+<div id="ui">
 
-            <div class="stats">
-                <div class="stat">
-                    <small>CASH</small>
-                    <strong id="money">$500</strong>
-                </div>
-
-                <div class="stat">
-                    <small>PROFIT / SEC</small>
-                    <strong id="income">$0</strong>
-                </div>
-
-                <div class="stat">
-                    <small>REPUTATION</small>
-                    <strong id="reputation">1</strong>
-                </div>
-
-                <div class="stat">
-                    <small>DISTRICT</small>
-                    <strong id="district">1</strong>
-                </div>
-            </div>
-        </header>
-
-        <main>
-
-            <section class="hero">
-                <div>
-                    <p class="eyebrow">DISTRICT 01</p>
-                    <h2>Build something<br><span>worth remembering.</span></h2>
-                    <p class="description">
-                        Turn an abandoned storefront into the most successful district in the city.
-                    </p>
-                </div>
-
-                <div class="city-level">
-                    <div class="level-number" id="cityLevel">1</div>
-                    <div>
-                        <small>CITY LEVEL</small>
-                        <div class="progress">
-                            <div id="levelProgress"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="dashboard">
-
-                <div class="panel businesses-panel">
-                    <div class="panel-header">
-                        <div>
-                            <p class="eyebrow">YOUR CITY</p>
-                            <h3>Businesses</h3>
-                        </div>
-                        <span id="businessCount">0 / 4</span>
-                    </div>
-
-                    <div id="businesses"></div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <p class="eyebrow">PROGRESSION</p>
-                            <h3>Upgrades</h3>
-                        </div>
-                    </div>
-
-                    <div id="upgrades"></div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <p class="eyebrow">ACHIEVEMENTS</p>
-                            <h3>Milestones</h3>
-                        </div>
-                    </div>
-
-                    <div id="achievements"></div>
-                </div>
-
-            </section>
-
-        </main>
-
-        <div id="notificationContainer"></div>
-
-        <footer>
-            <button onclick="saveGame()">SAVE</button>
-            <button onclick="resetGame()">RESET</button>
-            <span>NEON CITY TYCOON • v0.1</span>
-        </footer>
-
+    <div id="money">
+        💰 <span id="moneyValue">$500</span>
     </div>
 
-    <script src="game.js"></script>
+    <div id="title">
+        NEON CITY TYCOON
+    </div>
+
+    <div id="interaction"></div>
+
+    <div id="notification"></div>
+
+    <div id="instructions">
+        WASD — Move &nbsp; | &nbsp;
+        Mouse — Look &nbsp; | &nbsp;
+        E — Interact
+    </div>
+
+</div>
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+const game = {
+
+    money: 500,
+
+    machines: {
+        dropper: false,
+        upgrader: false,
+        collector: false
+    },
+
+    income: 0
+
+};
+
+/* =========================================================
+   THREE.JS
+========================================================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x080b12);
+
+scene.fog = new THREE.Fog(
+    0x080b12,
+    30,
+    120
+);
+
+
+/* CAMERA */
+
+const camera = new THREE.PerspectiveCamera(
+    70,
+    innerWidth / innerHeight,
+    .1,
+    500
+);
+
+camera.position.set(
+    12,
+    8,
+    14
+);
+
+
+/* RENDERER */
+
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
+
+renderer.setSize(
+    innerWidth,
+    innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(devicePixelRatio, 1.5)
+);
+
+renderer.shadowMap.enabled = true;
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+/* =========================================================
+   LIGHTING
+========================================================= */
+
+const ambient = new THREE.HemisphereLight(
+    0x9fdfff,
+    0x101522,
+    2
+);
+
+scene.add(ambient);
+
+
+const sun = new THREE.DirectionalLight(
+    0xffffff,
+    3
+);
+
+sun.position.set(
+    20,
+    35,
+    10
+);
+
+sun.castShadow = true;
+
+sun.shadow.mapSize.width = 1024;
+sun.shadow.mapSize.height = 1024;
+
+scene.add(sun);
+
+
+/* =========================================================
+   MATERIALS
+========================================================= */
+
+const grassMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x17231f
+    });
+
+const roadMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x151a22
+    });
+
+const buildingMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x273242
+    });
+
+const neonMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x5ff3ff,
+        emissive: 0x1cc9d8,
+        emissiveIntensity: 2
+    });
+
+const machineMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x34455c,
+        metalness: .6,
+        roughness: .35
+    });
+
+const moneyMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x62ff9b,
+        emissive: 0x20aa61,
+        emissiveIntensity: 1
+    });
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function box(
+    x,
+    y,
+    z,
+    sx,
+    sy,
+    sz,
+    material
+) {
+
+    const geometry =
+        new THREE.BoxGeometry(
+            sx,
+            sy,
+            sz
+        );
+
+    const mesh =
+        new THREE.Mesh(
+            geometry,
+            material
+        );
+
+    mesh.position.set(
+        x,
+        y,
+        z
+    );
+
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    scene.add(mesh);
+
+    return mesh;
+}
+
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+/* Ground */
+
+box(
+    0,
+    -0.5,
+    0,
+    120,
+    1,
+    120,
+    grassMaterial
+);
+
+
+/* Roads */
+
+box(
+    0,
+    .01,
+    35,
+    120,
+    .1,
+    10,
+    roadMaterial
+);
+
+box(
+    35,
+    .01,
+    0,
+    10,
+    .1,
+    120,
+    roadMaterial
+);
+
+
+/* =========================================================
+   CITY BUILDINGS
+========================================================= */
+
+function cityBuilding(
+    x,
+    z,
+    width,
+    depth,
+    height
+) {
+
+    const building = box(
+        x,
+        height / 2,
+        z,
+        width,
+        height,
+        depth,
+        buildingMaterial
+    );
+
+    return building;
+}
+
+
+cityBuilding(
+    -30,
+    -25,
+    12,
+    12,
+    25
+);
+
+cityBuilding(
+    -15,
+    -28,
+    9,
+    9,
+    16
+);
+
+cityBuilding(
+    -45,
+    -10,
+    15,
+    10,
+    20
+);
+
+cityBuilding(
+    30,
+    -30,
+    12,
+    12,
+    30
+);
+
+cityBuilding(
+    48,
+    -15,
+    10,
+    10,
+    18
+);
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+const player = new THREE.Group();
+
+scene.add(player);
+
+
+/* Body */
+
+const body = box(
+    0,
+    1.5,
+    0,
+    1,
+    1.8,
+    .6,
+    new THREE.MeshStandardMaterial({
+        color: 0x4b62ff
+    })
+);
+
+body.position.set(
+    0,
+    1.5,
+    0
+);
+
+player.add(body);
+
+
+/* Head */
+
+const headGeometry =
+    new THREE.BoxGeometry(
+        .8,
+        .8,
+        .8
+    );
+
+const head =
+    new THREE.Mesh(
+        headGeometry,
+        new THREE.MeshStandardMaterial({
+            color: 0xffd1a9
+        })
+    );
+
+head.position.y = 2.8;
+
+head.castShadow = true;
+
+player.add(head);
+
+
+/* Legs */
+
+const legMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x202634
+    });
+
+const leg1 = box(
+    -.25,
+    .35,
+    0,
+    .35,
+    .7,
+    .45,
+    legMaterial
+);
+
+const leg2 = box(
+    .25,
+    .35,
+    0,
+    .35,
+    .7,
+    .45,
+    legMaterial
+);
+
+player.add(leg1);
+player.add(leg2);
+
+
+/* =========================================================
+   PLAYER PLOT
+========================================================= */
+
+box(
+    0,
+    .1,
+    0,
+    28,
+    .2,
+    28,
+    new THREE.MeshStandardMaterial({
+        color: 0x202b2d
+    })
+);
+
+
+/* Plot border */
+
+function border(
+    x,
+    y,
+    z,
+    sx,
+    sy,
+    sz
+) {
+
+    box(
+        x,
+        y,
+        z,
+        sx,
+        sy,
+        sz,
+        neonMaterial
+    );
+
+}
+
+border(
+    0,
+    .25,
+    -14,
+    28,
+    .3,
+    .25
+);
+
+border(
+    0,
+    .25,
+    14,
+    28,
+    .3,
+    .25
+);
+
+border(
+    -14,
+    .25,
+    0,
+    .25,
+    .3,
+    28
+);
+
+border(
+    14,
+    .25,
+    0,
+    .25,
+    .3,
+    28
+);
+
+
+/* =========================================================
+   CONVEYOR
+========================================================= */
+
+const conveyor = [];
+
+for (
+    let i = 0;
+    i < 8;
+    i++
+) {
+
+    const tile = box(
+        -6 + i * 1.5,
+        .35,
+        -3,
+        1.3,
+        .15,
+        3,
+        new THREE.MeshStandardMaterial({
+            color: 0x303846
+        })
+    );
+
+    conveyor.push(tile);
+
+}
+
+
+/* =========================================================
+   MACHINE SYSTEM
+========================================================= */
+
+const interactables = [];
+
+
+function createButton(
+    x,
+    z,
+    text,
+    cost,
+    callback
+) {
+
+    const button = box(
+        x,
+        .3,
+        z,
+        2.5,
+        .35,
+        1.5,
+        neonMaterial
+    );
+
+    button.userData = {
+        text,
+        cost,
+        callback
+    };
+
+    interactables.push(button);
+
+    return button;
+}
+
+
+/* =========================================================
+   DROPper
+========================================================= */
+
+createButton(
+    -7,
+    5,
+    "BUY DROPPER",
+    250,
+    () => {
+
+        if (game.machines.dropper) {
+
+            notify(
+                "You already own the Dropper."
+            );
+
+            return;
+        }
+
+        if (
+            game.money < 250
+        ) {
+
+            notify(
+                "Not enough money."
+            );
+
+            return;
+        }
+
+        game.money -= 250;
+
+        game.machines.dropper = true;
+
+        game.income += 5;
+
+        buildDropper();
+
+        notify(
+            "🏭 Dropper purchased!"
+        );
+
+        updateUI();
+
+    }
+);
+
+
+/* =========================================================
+   UPGRADE
+========================================================= */
+
+createButton(
+    0,
+    5,
+    "UPGRADE",
+    1000,
+    () => {
+
+        if (
+            !game.machines.dropper
+        ) {
+
+            notify(
+                "Buy the Dropper first."
+            );
+
+            return;
+        }
+
+        if (
+            game.money < 1000
+        ) {
+
+            notify(
+                "Not enough money."
+            );
+
+            return;
+        }
+
+        game.money -= 1000;
+
+        game.income += 10;
+
+        notify(
+            "⚡ Machine upgraded!"
+        );
+
+        updateUI();
+
+    }
+);
+
+
+/* =========================================================
+   COLLECTOR
+========================================================= */
+
+createButton(
+    7,
+    5,
+    "COLLECTOR",
+    2000,
+    () => {
+
+        if (
+            game.machines.collector
+        ) {
+
+            notify(
+                "Collector already installed."
+            );
+
+            return;
+        }
+
+        if (
+            game.money < 2000
+        ) {
+
+            notify(
+                "Not enough money."
+            );
+
+            return;
+        }
+
+        game.money -= 2000;
+
+        game.machines.collector = true;
+
+        notify(
+            "💰 Auto Collector installed!"
+        );
+
+        updateUI();
+
+    }
+);
+
+
+/* =========================================================
+   BUILD DROPPER
+========================================================= */
+
+function buildDropper() {
+
+    const machine = new THREE.Group();
+
+    const base = box(
+        -6,
+        1,
+        -3,
+        3,
+        2,
+        3,
+        machineMaterial
+    );
+
+    machine.add(base);
+
+    const top = box(
+        -6,
+        2.4,
+        -3,
+        2,
+        .5,
+        2,
+        neonMaterial
+    );
+
+    machine.add(top);
+
+    scene.add(machine);
+
+}
+
+
+/* =========================================================
+   MONEY DROPS
+========================================================= */
+
+const moneyDrops = [];
+
+
+function spawnMoney() {
+
+    if (
+        !game.machines.dropper
+    ) return;
+
+    const cube = box(
+        -6,
+        1.2,
+        -3,
+        .35,
+        .35,
+        .35,
+        moneyMaterial
+    );
+
+    cube.userData.progress = 0;
+
+    moneyDrops.push(cube);
+
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+const keys = {};
+
+window.addEventListener(
+    "keydown",
+    e => {
+
+        keys[e.key.toLowerCase()] = true;
+
+        if (
+            e.key.toLowerCase() === "e"
+        ) {
+
+            interact();
+
+        }
+
+    }
+);
+
+window.addEventListener(
+    "keyup",
+    e => {
+
+        keys[e.key.toLowerCase()] = false;
+
+    }
+);
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+let cameraAngle = 0;
+
+let dragging = false;
+let previousMouseX = 0;
+
+
+renderer.domElement.addEventListener(
+    "mousedown",
+    e => {
+
+        dragging = true;
+
+        previousMouseX = e.clientX;
+
+    }
+);
+
+window.addEventListener(
+    "mouseup",
+    () => {
+
+        dragging = false;
+
+    }
+);
+
+window.addEventListener(
+    "mousemove",
+    e => {
+
+        if (!dragging) return;
+
+        const movement =
+            e.clientX -
+            previousMouseX;
+
+        cameraAngle -= movement * .006;
+
+        previousMouseX =
+            e.clientX;
+
+    }
+);
+
+
+/* =========================================================
+   MOVEMENT
+========================================================= */
+
+function updatePlayer() {
+
+    const speed = .12;
+
+    const forward =
+        new THREE.Vector3(
+            Math.sin(cameraAngle),
+            0,
+            Math.cos(cameraAngle)
+        );
+
+    const right =
+        new THREE.Vector3(
+            Math.cos(cameraAngle),
+            0,
+            -Math.sin(cameraAngle)
+        );
+
+
+    if (keys["w"]) {
+
+        player.position.addScaledVector(
+            forward,
+            -speed
+        );
+
+    }
+
+    if (keys["s"]) {
+
+        player.position.addScaledVector(
+            forward,
+            speed
+        );
+
+    }
+
+    if (keys["a"]) {
+
+        player.position.addScaledVector(
+            right,
+            -speed
+        );
+
+    }
+
+    if (keys["d"]) {
+
+        player.position.addScaledVector(
+            right,
+            speed
+        );
+
+    }
+
+
+    /* Keep player inside plot */
+
+    player.position.x =
+        THREE.MathUtils.clamp(
+            player.position.x,
+            -12,
+            12
+        );
+
+    player.position.z =
+        THREE.MathUtils.clamp(
+            player.position.z,
+            -12,
+            12
+        );
+
+
+    /* Camera */
+
+    const distance = 10;
+
+    const cameraX =
+        player.position.x +
+        Math.sin(cameraAngle) *
+        distance;
+
+    const cameraZ =
+        player.position.z +
+        Math.cos(cameraAngle) *
+        distance;
+
+    camera.position.lerp(
+        new THREE.Vector3(
+            cameraX,
+            player.position.y + 7,
+            cameraZ
+        ),
+        .1
+    );
+
+    camera.lookAt(
+        player.position.x,
+        1.5,
+        player.position.z
+    );
+
+}
+
+
+/* =========================================================
+   INTERACTION
+========================================================= */
+
+const raycaster =
+    new THREE.Raycaster();
+
+const mouse =
+    new THREE.Vector2(
+        0,
+        0
+    );
+
+
+function interact() {
+
+    let closest = null;
+
+    let distance = Infinity;
+
+    for (
+        const object of interactables
+    ) {
+
+        const d =
+            object.position.distanceTo(
+                player.position
+            );
+
+        if (
+            d < distance
+        ) {
+
+            distance = d;
+            closest = object;
+
+        }
+
+    }
+
+    if (
+        closest &&
+        distance < 4
+    ) {
+
+        closest.userData.callback();
+
+    }
+
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function updateUI() {
+
+    document.getElementById(
+        "moneyValue"
+    ).textContent =
+        "$" +
+        Math.floor(
+            game.money
+        );
+
+}
+
+
+function notify(text) {
+
+    const element =
+        document.getElementById(
+            "notification"
+        );
+
+    element.textContent = text;
+
+    element.style.opacity = 1;
+
+    setTimeout(
+        () => {
+            element.style.opacity = 0;
+        },
+        2200
+    );
+
+}
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+let lastTime = 0;
+
+let incomeTimer = 0;
+
+let dropTimer = 0;
+
+
+function animate(time) {
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const delta =
+        (time - lastTime) / 1000;
+
+    lastTime = time;
+
+    updatePlayer();
+
+
+    /* Income */
+
+    incomeTimer += delta;
+
+    if (
+        incomeTimer >= 1
+    ) {
+
+        incomeTimer = 0;
+
+        game.money +=
+            game.income;
+
+        updateUI();
+
+    }
+
+
+    /* Spawn money */
+
+    dropTimer += delta;
+
+    if (
+        dropTimer >= 1
+    ) {
+
+        dropTimer = 0;
+
+        spawnMoney();
+
+    }
+
+
+    /* Move money */
+
+    for (
+        let i = moneyDrops.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const money =
+            moneyDrops[i];
+
+        money.userData.progress +=
+            delta * 3;
+
+        money.position.x =
+            -6 +
+            money.userData.progress;
+
+        money.rotation.x +=
+            delta * 5;
+
+        money.rotation.y +=
+            delta * 5;
+
+
+        if (
+            money.userData.progress > 8
+        ) {
+
+            scene.remove(
+                money
+            );
+
+            moneyDrops.splice(
+                i,
+                1
+            );
+
+            if (
+                game.machines.collector
+            ) {
+
+                game.money += 5;
+
+            }
+
+        }
+
+    }
+
+
+    /* Highlight nearby button */
+
+    const interaction =
+        document.getElementById(
+            "interaction"
+        );
+
+    let nearest = null;
+    let nearestDistance = Infinity;
+
+    for (
+        const object of interactables
+    ) {
+
+        const d =
+            object.position.distanceTo(
+                player.position
+            );
+
+        if (
+            d < nearestDistance
+        ) {
+
+            nearestDistance = d;
+            nearest = object;
+
+        }
+
+    }
+
+    if (
+        nearest &&
+        nearestDistance < 4
+    ) {
+
+        interaction.style.display =
+            "block";
+
+        interaction.textContent =
+            "E  •  " +
+            nearest.userData.text;
+
+    } else {
+
+        interaction.style.display =
+            "none";
+
+    }
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+
+animate(0);
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            innerWidth /
+            innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+
+    }
+);
+
+</script>
+
 </body>
 </html>
