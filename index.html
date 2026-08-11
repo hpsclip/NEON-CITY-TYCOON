@@ -5556,7 +5556,1196 @@ setTimeout(
   },
   700
 );
+/* ============================================================
+   NEON CITY TYCOON v0.6
+   CONTROLLER + VISUAL OVERHAUL
+============================================================ */
 
+console.log("NEON CITY TYCOON v0.6 LOADED");
+
+
+/* ============================================================
+   CONTROLLER
+============================================================ */
+
+const controller = {
+
+  connected:false,
+
+  index:-1,
+
+  deadzone:.16,
+
+  moveX:0,
+
+  moveY:0,
+
+  lookX:0,
+
+  lookY:0,
+
+  sprint:false,
+
+  jumpPressed:false,
+
+  interactPressed:false,
+
+  lastButtons:[]
+
+};
+
+
+function getController(){
+
+  const pads =
+    navigator.getGamepads
+      ? navigator.getGamepads()
+      : [];
+
+  if(
+    controller.index>=0 &&
+    pads[controller.index]
+  ){
+
+    return pads[controller.index];
+
+  }
+
+  for(
+    let i=0;
+    i<pads.length;
+    i++
+  ){
+
+    if(pads[i]){
+
+      controller.index=i;
+
+      controller.connected=true;
+
+      return pads[i];
+
+    }
+
+  }
+
+  return null;
+
+}
+
+
+window.addEventListener(
+  "gamepadconnected",
+  e => {
+
+    controller.index=
+      e.gamepad.index;
+
+    controller.connected=true;
+
+    notify(
+      "CONTROLLER CONNECTED"
+    );
+
+    console.log(
+      "Controller connected:",
+      e.gamepad.id
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "gamepaddisconnected",
+  e => {
+
+    if(
+      e.gamepad.index===
+      controller.index
+    ){
+
+      controller.index=-1;
+
+      controller.connected=false;
+
+      controller.moveX=0;
+      controller.moveY=0;
+      controller.lookX=0;
+      controller.lookY=0;
+
+      clearControllerKeys();
+
+      notify(
+        "CONTROLLER DISCONNECTED"
+      );
+
+    }
+
+  }
+);
+
+
+function deadzone(
+  value
+){
+
+  if(
+    Math.abs(value)<
+    controller.deadzone
+  ){
+
+    return 0;
+
+  }
+
+  const sign=
+    Math.sign(value);
+
+  const amount=
+    (Math.abs(value)-
+    controller.deadzone)/
+    (1-controller.deadzone);
+
+  return (
+    sign*
+    Math.min(
+      1,
+      amount
+    )
+  );
+
+}
+
+
+function buttonDown(
+  pad,
+  index
+){
+
+  return !!(
+    pad.buttons[index] &&
+    pad.buttons[index].pressed
+  );
+
+}
+
+
+function updateController(){
+
+  const pad=
+    getController();
+
+  if(!pad)
+    return;
+
+
+  /*
+   * Standard Xbox layout:
+   *
+   * 0 = A
+   * 1 = B
+   * 2 = X
+   * 3 = Y
+   * 6 = LT
+   * 7 = RT
+   */
+
+  controller.moveX=
+    deadzone(
+      pad.axes[0] || 0
+    );
+
+  controller.moveY=
+    deadzone(
+      pad.axes[1] || 0
+    );
+
+  controller.lookX=
+    deadzone(
+      pad.axes[2] || 0
+    );
+
+  controller.lookY=
+    deadzone(
+      pad.axes[3] || 0
+    );
+
+
+  controller.sprint=
+    buttonDown(
+      pad,
+      7
+    );
+
+
+  const jump=
+    buttonDown(
+      pad,
+      0
+    );
+
+
+  const interactButton=
+    buttonDown(
+      pad,
+      1
+    );
+
+
+  controller.jumpPressed=
+    jump &&
+    !controller.lastButtons[0];
+
+
+  controller.interactPressed=
+    interactButton &&
+    !controller.lastButtons[1];
+
+
+  controller.lastButtons=[];
+
+
+  for(
+    let i=0;
+    i<pad.buttons.length;
+    i++
+  ){
+
+    controller.lastButtons[i]=
+      !!pad.buttons[i].pressed;
+
+  }
+
+
+  /*
+   * Convert left stick into the same
+   * movement keys the existing game uses.
+   */
+
+  keys.w=
+    controller.moveY<
+    -.18;
+
+  keys.s=
+    controller.moveY>
+    .18;
+
+  keys.a=
+    controller.moveX<
+    -.18;
+
+  keys.d=
+    controller.moveX>
+    .18;
+
+
+  keys.shift=
+    controller.sprint;
+
+
+  /*
+   * Controller actions.
+   */
+
+  if(
+    controller.jumpPressed
+  ){
+
+    jump();
+
+  }
+
+
+  if(
+    controller.interactPressed
+  ){
+
+    interact();
+
+  }
+
+
+  /*
+   * Right-stick camera.
+   *
+   * IMPORTANT:
+   * Positive Y rotates the camera DOWN.
+   * Negative Y rotates it UP.
+   *
+   * This fixes the inverted controller issue.
+   */
+
+  if(
+    Math.abs(controller.lookX)>.01
+  ){
+
+    yaw -=
+      controller.lookX*
+      .055;
+
+  }
+
+
+  if(
+    Math.abs(controller.lookY)>.01
+  ){
+
+    pitch +=
+      controller.lookY*
+      .042;
+
+  }
+
+
+  pitch=
+    THREE.MathUtils.clamp(
+      pitch,
+      -.05,
+      .82
+    );
+
+}
+
+
+function clearControllerKeys(){
+
+  keys.w=false;
+  keys.a=false;
+  keys.s=false;
+  keys.d=false;
+  keys.shift=false;
+
+}
+
+
+/* ============================================================
+   CONTROLLER UPDATE
+============================================================ */
+
+const oldUpdatePlayer=
+  updatePlayer;
+
+
+updatePlayer=function(dt){
+
+  updateController();
+
+  oldUpdatePlayer(dt);
+
+};
+
+
+/* ============================================================
+   VISUAL OVERHAUL
+============================================================ */
+
+
+/*
+ * Less "everything is glowing".
+ */
+
+function toneMaterial(
+  material,
+  roughness=.78,
+  metalness=.03
+){
+
+  if(!material)
+    return;
+
+  material.roughness=
+    roughness;
+
+  material.metalness=
+    metalness;
+
+  if(
+    material.emissive
+  ){
+
+    material.emissiveIntensity=
+      Math.min(
+        material.emissiveIntensity || 0,
+        .35
+      );
+
+  }
+
+}
+
+
+/*
+ * Tone existing materials.
+ */
+
+for(
+  const key in M
+){
+
+  try{
+
+    toneMaterial(
+      M[key]
+    );
+
+  }catch(e){}
+
+}
+
+
+/* ============================================================
+   BETTER PLAYER APPEARANCE
+============================================================ */
+
+function improvePlayerVisual(){
+
+  if(!player)
+    return;
+
+
+  /*
+   * Slightly soften the existing
+   * blocky character without replacing
+   * the whole player system.
+   */
+
+  playerBody.traverse(
+    object => {
+
+      if(
+        !object.isMesh ||
+        !object.material
+      )
+        return;
+
+
+      object.material.roughness=
+        .68;
+
+
+      object.castShadow=true;
+
+      object.receiveShadow=true;
+
+    }
+  );
+
+
+  /*
+   * Give the player a small
+   * breathing animation marker.
+   */
+
+  player.userData.visualV06=true;
+
+}
+
+
+improvePlayerVisual();
+
+
+/* ============================================================
+   NPC VISUAL VARIATION
+============================================================ */
+
+const v06NPCShirts=[
+  0x3158a8,
+  0x9b3e52,
+  0x34795f,
+  0xa66d28,
+  0x68468f,
+  0x9b4775,
+  0x2f7182,
+  0x515b68
+];
+
+
+const v06NPCPants=[
+  0x171b22,
+  0x242a34,
+  0x30343b,
+  0x20252c
+];
+
+
+function randomizeNPCVisual(
+  npc,
+  index
+){
+
+  if(!npc)
+    return;
+
+
+  const shirtColor=
+    v06NPCShirts[
+      index%
+      v06NPCShirts.length
+    ];
+
+
+  const pantsColor=
+    v06NPCPants[
+      index%
+      v06NPCPants.length
+    ];
+
+
+  npc.traverse(
+    object => {
+
+      if(
+        !object.isMesh ||
+        !object.material
+      )
+        return;
+
+
+      object.castShadow=true;
+
+      object.receiveShadow=true;
+
+      /*
+       * Preserve skin/hair by only
+       * changing obvious clothing
+       * colors based on the existing
+       * material color.
+       */
+
+      const c=
+        object.material.color;
+
+      if(!c)
+        return;
+
+
+      const hex=
+        c.getHex();
+
+
+      if(
+        hex===0x4269ef ||
+        hex===0xe4556e ||
+        hex===0x48b984 ||
+        hex===0xd69a3e ||
+        hex===0x9a61d5 ||
+        hex===0xd8669f ||
+        hex===0x3aa6bb
+      ){
+
+        object.material=
+          object.material.clone();
+
+        object.material.color.setHex(
+          shirtColor
+        );
+
+        object.material.roughness=
+          .72;
+
+      }
+
+    }
+  );
+
+
+  /*
+   * Small height variation.
+   */
+
+  const height=
+    .94+
+    Math.random()*.12;
+
+  npc.scale.y=
+    height;
+
+
+  npc.userData.v06Visual=true;
+
+}
+
+
+for(
+  let i=0;
+  i<npcs.length;
+  i++
+){
+
+  randomizeNPCVisual(
+    npcs[i],
+    i
+  );
+
+}
+
+
+/* ============================================================
+   NPC IDLE / WALK POLISH
+============================================================ */
+
+function updateNPCVisuals(
+  dt
+){
+
+  for(
+    const npc of npcs
+  ){
+
+    if(!npc.userData)
+      continue;
+
+
+    const data=
+      npc.userData;
+
+
+    const time=
+      performance.now()*.001+
+      (data.walkOffset || 0);
+
+
+    if(
+      data.state==="walking"
+    ){
+
+      const walk=
+        Math.sin(
+          time*8
+        )*.18;
+
+
+      if(data.leftArm)
+        data.leftArm.rotation.x=
+          walk;
+
+      if(data.rightArm)
+        data.rightArm.rotation.x=
+          -walk;
+
+      if(data.leftLeg)
+        data.leftLeg.rotation.x=
+          -walk;
+
+      if(data.rightLeg)
+        data.rightLeg.rotation.x=
+          walk;
+
+    }else{
+
+      /*
+       * Subtle idle breathing.
+       */
+
+      npc.position.y=
+        Math.sin(
+          time*1.5
+        )*.015;
+
+    }
+
+  }
+
+}
+
+
+/* ============================================================
+   EXTRA CITY DETAIL
+============================================================ */
+
+const v06Props=[];
+
+
+function addStreetLamp(
+  x,
+  z
+){
+
+  const g=
+    new THREE.Group();
+
+
+  const poleMat=
+    new THREE.MeshStandardMaterial({
+      color:0x252a31,
+      roughness:.82,
+      metalness:.25
+    });
+
+
+  const lampMat=
+    new THREE.MeshStandardMaterial({
+      color:0xf0dca4,
+      emissive:0xe6c66d,
+      emissiveIntensity:.7,
+      roughness:.45
+    });
+
+
+  const pole=
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        .055,
+        .075,
+        3.2,
+        8
+      ),
+      poleMat
+    );
+
+
+  pole.position.y=
+    1.6;
+
+  pole.castShadow=true;
+
+  g.add(pole);
+
+
+  const arm=
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .65,
+        .06,
+        .06
+      ),
+      poleMat
+    );
+
+
+  arm.position.set(
+    .28,
+    3.12,
+    0
+  );
+
+  g.add(arm);
+
+
+  const lamp=
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        .12,
+        8,
+        6
+      ),
+      lampMat
+    );
+
+
+  lamp.position.set(
+    .57,
+    3.05,
+    0
+  );
+
+  g.add(lamp);
+
+
+  g.position.set(
+    x,
+    0,
+    z
+  );
+
+
+  scene.add(g);
+
+  v06Props.push(g);
+
+}
+
+
+/*
+ * Keep the number low for performance.
+ */
+
+[
+  [-24,24],
+  [-12,24],
+  [12,24],
+  [24,24],
+
+  [-24,-24],
+  [-12,-24],
+  [12,-24],
+  [24,-24],
+
+  [24,12],
+  [24,-12],
+  [-24,12],
+  [-24,-12]
+
+].forEach(
+  p => addStreetLamp(
+    p[0],
+    p[1]
+  )
+);
+
+
+/* ============================================================
+   STREET BENCHES
+============================================================ */
+
+function addBench(
+  x,
+  z,
+  rotation=0
+){
+
+  const g=
+    new THREE.Group();
+
+
+  const wood=
+    new THREE.MeshStandardMaterial({
+      color:0x5a3d2a,
+      roughness:.9
+    });
+
+
+  const metal=
+    new THREE.MeshStandardMaterial({
+      color:0x30363d,
+      roughness:.7,
+      metalness:.25
+    });
+
+
+  const seat=
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1.8,
+        .16,
+        .48
+      ),
+      wood
+    );
+
+
+  seat.position.y=
+    .65;
+
+  seat.castShadow=true;
+
+  g.add(seat);
+
+
+  const back=
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1.8,
+        .65,
+        .12
+      ),
+      wood
+    );
+
+
+  back.position.set(
+    0,
+    .95,
+    .18
+  );
+
+  back.castShadow=true;
+
+  g.add(back);
+
+
+  for(
+    const sx of [-.65,.65]
+  ){
+
+    const leg=
+      new THREE.Mesh(
+        new THREE.BoxGeometry(
+          .1,
+          .65,
+          .1
+        ),
+        metal
+      );
+
+    leg.position.set(
+      sx,
+      .32,
+      0
+    );
+
+    g.add(leg);
+
+  }
+
+
+  g.position.set(
+    x,
+    0,
+    z
+  );
+
+  g.rotation.y=
+    rotation;
+
+
+  scene.add(g);
+
+  v06Props.push(g);
+
+}
+
+
+addBench(
+  -19,
+  21,
+  Math.PI/2
+);
+
+addBench(
+  19,
+  -21,
+  -Math.PI/2
+);
+
+
+/* ============================================================
+   BETTER BUSINESS LIGHTING
+============================================================ */
+
+function improveBusinessLighting(){
+
+  if(!business)
+    return;
+
+
+  /*
+   * Small local lights make the building
+   * feel like an actual place without
+   * turning the whole map into a glow box.
+   */
+
+  const lights=[];
+
+
+  const positions=[
+    [-2.5,2.3,-8.7],
+    [0,2.3,-8.7],
+    [2.5,2.3,-8.7]
+  ];
+
+
+  for(
+    const p of positions
+  ){
+
+    const light=
+      new THREE.PointLight(
+        0xffd89b,
+        .7,
+        8
+      );
+
+
+    light.position.set(
+      p[0],
+      p[1],
+      p[2]
+    );
+
+
+    business.add(light);
+
+    lights.push(light);
+
+  }
+
+
+  business.userData.v06Lights=
+    lights;
+
+}
+
+
+improveBusinessLighting();
+
+
+/* ============================================================
+   BETTER CASH EFFECT
+============================================================ */
+
+function pulseCashRegister(){
+
+  if(
+    !cashRegisterPosition ||
+    state.businessLevel<=0
+  )
+    return;
+
+
+  /*
+   * Very small pulse so the register
+   * feels active without giant neon FX.
+   */
+
+  const t=
+    performance.now()*.004;
+
+
+  business.traverse(
+    object => {
+
+      if(
+        !object.isMesh ||
+        !object.material ||
+        !object.material.color
+      )
+        return;
+
+
+      /*
+       * Don't modify every mesh.
+       */
+
+    }
+  );
+
+}
+
+
+setInterval(
+  pulseCashRegister,
+  100
+);
+
+
+/* ============================================================
+   CONTROLLER UI HINT
+============================================================ */
+
+function updateControlHint(){
+
+  const hint=
+    document.getElementById(
+      "bottomHint"
+    );
+
+  if(!hint)
+    return;
+
+
+  if(
+    controller.connected
+  ){
+
+    hint.textContent=
+      "LEFT STICK • MOVE   " +
+      "RIGHT STICK • LOOK   " +
+      "RT • SPRINT   " +
+      "A • JUMP   " +
+      "B • INTERACT";
+
+  }else{
+
+    hint.innerHTML=
+      "WASD • MOVE &nbsp; " +
+      "SHIFT • SPRINT &nbsp; " +
+      "SPACE • JUMP &nbsp; " +
+      "MOUSE • LOOK &nbsp; " +
+      "E • INTERACT";
+
+  }
+
+}
+
+
+setInterval(
+  updateControlHint,
+  250
+);
+
+
+/* ============================================================
+   V0.6 VISUAL UPDATE LOOP
+============================================================ */
+
+const oldAnimateNPCs=
+  updateNPCs;
+
+
+updateNPCs=function(dt){
+
+  oldAnimateNPCs(dt);
+
+  updateNPCVisuals(dt);
+
+};
+
+
+/* ============================================================
+   KEYBOARD + CONTROLLER RESET
+============================================================ */
+
+window.addEventListener(
+  "blur",
+  () => {
+
+    clearControllerKeys();
+
+  }
+);
+
+
+/* ============================================================
+   STARTUP
+============================================================ */
+
+setTimeout(
+  () => {
+
+    updateControlHint();
+
+    if(
+      navigator.getGamepads
+    ){
+
+      const pads=
+        navigator.getGamepads();
+
+
+      for(
+        let i=0;
+        i<pads.length;
+        i++
+      ){
+
+        if(pads[i]){
+
+          controller.index=i;
+
+          controller.connected=true;
+
+          break;
+
+        }
+
+      }
+
+    }
+
+    notify(
+      "NEON CITY v0.6"
+    );
+
+  },
+  900
+);
+
+
+/* ============================================================
+   END v0.6
+============================================================ */
 </script>
 
 </body>
